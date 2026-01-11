@@ -2,39 +2,32 @@ import serial
 import numpy as np
 import time
 
-PORT = 'COM7' 
-BAUD = 250000 
-FS = 8000
+PORT, BAUD_SERIAL, FS = 'COM7', 250000, 8000 
+MARK, SPACE = 1200, 1425
+BIT_DUR = 1 / 45.45
 
-MARK_FREQ = 1200   # Frequency for a digital '1'
-SPACE_FREQ = 1500  # Frequency for a digital '0'
-RTTY_BAUD = 45.45  # Standard RTTY speed
-BIT_DURATION = 1 / RTTY_BAUD
+ser = serial.Serial(PORT, BAUD_SERIAL, timeout=0)
 
-ser = serial.Serial(PORT, BAUD, timeout=0)
-
-def generate_rtty_bit(freq, duration):
+def send_tone(freq, duration):
     t = np.linspace(0, duration, int(FS * duration), endpoint=False)
-    wave = np.sin(2 * np.pi * freq * t)
-    wave = np.tanh(wave * 8.0) 
-    return ((wave * 120) + 128).astype(np.uint8).tobytes()
+    wave = np.tanh(np.sin(2 * np.pi * freq * t) * 5.0) 
+    ser.write(((wave * 120) + 128).astype(np.uint8).tobytes())
+    time.sleep(duration)
 
-def send_rtty_string(text):
-    print(f"Sending: {text}")
-    for char in text:
-        ser.write(generate_rtty_bit(SPACE_FREQ, BIT_DURATION))
-        
-        bits = format(ord(char) % 32, '05b') 
-        for bit in bits:
-            f = MARK_FREQ if bit == '1' else SPACE_FREQ
-            ser.write(generate_rtty_bit(f, BIT_DURATION))
-            
-        ser.write(generate_rtty_bit(MARK_FREQ, BIT_DURATION * 2))
+def transmit_rtty(text):
+    print(f"Sending RTTY...")
+    for _ in range(2): send_tone(MARK, BIT_DUR * 5) 
+    for char in text.upper():
+        send_tone(SPACE, BIT_DUR) # Start
+        bits = format(ord(char) % 32, '05b')
+        for bit in bits[::-1]:
+            send_tone(MARK if bit == '1' else SPACE, BIT_DUR)
+        send_tone(MARK, BIT_DUR * 1.5) # Stop
 
+print("--- RTTY INTERACTIVE TERMINAL ---")
 try:
-    print("--- RTTY DIGITAL STATION ---")
     while True:
-        send_rtty_string("TEST STRING ")
-        time.sleep(2)
+        msg = input("Enter RTTY Message: ")
+        transmit_rtty(msg + "\r\n")
 except KeyboardInterrupt:
     ser.close()

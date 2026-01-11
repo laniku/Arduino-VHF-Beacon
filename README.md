@@ -3,7 +3,7 @@
 > [!IMPORTANT]
 > Depending on your jurisdiction, you may require licensing and certification to operate this equipment.
 
-This is some example code that runs on an Arduino UNO R2 compatible that uses Windows as a host machine to transmit various forms of data.  So far, plugins are written for voice, WWV style time signals, and RTTY data transmission.
+This is some example code that runs on an Arduino UNO R2 compatible that uses Windows as a host machine to transmit various forms of data.  So far, plugins are written for voice, CW keyed Morse, WWV style time signals, and RTTY data transmission.
 
 #### Setup:
 
